@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Lock, Eye, EyeOff, CheckCircle2, Sparkles, ArrowLeft } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { nappyDb } from "../services/nappyDb";
 
 export default function Login() {
   const { success, error } = useToast();
@@ -57,50 +58,29 @@ export default function Login() {
           const emailLower = formData.email.toLowerCase().trim();
 
           // 1. Check for Admin Login
-          const adminCredsStr = localStorage.getItem("nappy_admin_credentials");
-          let adminEmail = "admin@nappy.com";
-          let adminPassword = "admin123";
-          
-          if (adminCredsStr) {
-            try {
-              const creds = JSON.parse(adminCredsStr);
-              if (creds.email) adminEmail = creds.email.toLowerCase().trim();
-              if (creds.password) adminPassword = creds.password;
-            } catch (e) {
-              console.error("Failed to parse admin credentials from local storage", e);
-            }
-          }
+          const adminCreds = nappyDb.getAdminCredentials();
+          const adminEmail = adminCreds.email.toLowerCase().trim();
+          const adminPassword = adminCreds.password;
 
           if (emailLower === adminEmail) {
             if (formData.password === adminPassword) {
               localStorage.setItem("nappy_logged_in_admin", "true");
               
               // Maintain/Update admin profile info
-              const existingProfileStr = localStorage.getItem("nappy_admin_profile");
-              let fullName = "NapPy Administrator";
-              let createdDate = "July 16, 2026";
-              
-              if (existingProfileStr) {
-                try {
-                  const p = JSON.parse(existingProfileStr);
-                  if (p.fullName) fullName = p.fullName;
-                  if (p.createdDate) createdDate = p.createdDate;
-                } catch (e) {}
-              }
+              const adminProfile = nappyDb.getAdminProfile();
+              const fullName = adminProfile.fullName || "NapPy Administrator";
+              const createdDate = adminProfile.createdDate || "July 16, 2026";
               
               const lastLoginTime = new Date().toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
               localStorage.setItem("nappy_admin_last_login", lastLoginTime);
               
-              localStorage.setItem(
-                "nappy_admin_profile",
-                JSON.stringify({
-                  fullName,
-                  email: adminEmail,
-                  role: "Administrator",
-                  createdDate,
-                  lastLogin: lastLoginTime
-                })
-              );
+              nappyDb.saveAdminProfile({
+                fullName,
+                email: adminEmail,
+                role: "Administrator",
+                createdDate,
+                lastLogin: lastLoginTime
+              });
               
               setIsSuccess(true);
               setIsVerifying(false);
@@ -121,8 +101,7 @@ export default function Login() {
           }
 
           // 2. Student Login Check
-          const studentsJSON = localStorage.getItem("nappy_students");
-          const students = studentsJSON ? JSON.parse(studentsJSON) : [];
+          const students = nappyDb.getStudents();
           
           // Find registered student
           const student = students.find(
@@ -147,7 +126,7 @@ export default function Login() {
             return;
           }
 
-          // Store successful student login session
+          // Store successful student login session in localStorage as temporary preference/token
           localStorage.setItem("nappy_logged_in_student", JSON.stringify(student));
 
           setIsSuccess(true);
@@ -201,14 +180,8 @@ export default function Login() {
             <h2 className="text-3xl font-bold font-display text-white mb-2">Welcome Back!</h2>
             <p className="text-gray-400 max-w-sm mb-6 leading-relaxed">
               Login successful. Accessing the {(() => {
-                const adminCredsStr = localStorage.getItem("nappy_admin_credentials");
-                let adminEmail = "admin@nappy.com";
-                if (adminCredsStr) {
-                  try {
-                    const creds = JSON.parse(adminCredsStr);
-                    if (creds.email) adminEmail = creds.email.toLowerCase().trim();
-                  } catch (e) {}
-                }
+                const adminCreds = nappyDb.getAdminCredentials();
+                const adminEmail = adminCreds.email.toLowerCase().trim();
                 return formData.email.toLowerCase().trim() === adminEmail ? "admin" : "student";
               })()} console...
             </p>

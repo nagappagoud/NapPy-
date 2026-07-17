@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { User, Mail, Phone, GraduationCap, IdCard, GitBranch, CalendarDays, Lock, Eye, EyeOff, CheckCircle2, Sparkles, ArrowLeft } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { nappyDb } from "../services/nappyDb";
 
 export default function Register() {
   const { success, error } = useToast();
@@ -73,8 +74,7 @@ export default function Register() {
 
       setTimeout(() => {
         try {
-          const studentsJSON = localStorage.getItem("nappy_students");
-          const students = studentsJSON ? JSON.parse(studentsJSON) : [];
+          const students = nappyDb.getStudents();
           
           // Check if student with this email is already registered
           const emailExists = students.some(
@@ -113,8 +113,8 @@ export default function Register() {
             registrationDate: new Date().toISOString(),
           };
 
-          students.push(newStudent);
-          localStorage.setItem("nappy_students", JSON.stringify(students));
+          const updatedStudents = [...students, newStudent];
+          nappyDb.saveStudents(updatedStudents);
           
           setIsSuccess(true);
           setIsRegistering(false);
@@ -125,9 +125,9 @@ export default function Register() {
             window.dispatchEvent(new PopStateEvent("popstate"));
           }, 2000);
         } catch (err) {
-          console.error("Error saving student to localStorage", err);
+          console.error("Error saving student", err);
           setIsRegistering(false);
-          error("System Error", "Could not complete registration. Local database is full or inaccessible.");
+          error("System Error", "Could not complete registration due to a network or database issue.");
         }
       }, 1500);
     }

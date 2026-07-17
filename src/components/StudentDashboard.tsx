@@ -167,16 +167,7 @@ export default function StudentDashboard() {
       const dbRecordedLectures = nappyDb.getRecordedLectures();
       setRecordedLectures(dbRecordedLectures);
 
-      const cachedCourses = localStorage.getItem("nappy_admin_courses");
-      if (cachedCourses) {
-        try {
-          setCourses(JSON.parse(cachedCourses));
-        } catch (e) {
-          console.error("Error parsing courses", e);
-        }
-      } else {
-        setCourses([]);
-      }
+      setCourses(nappyDb.getCourses());
     };
 
     loadAllData();
@@ -467,18 +458,11 @@ export default function StudentDashboard() {
       localStorage.setItem("nappy_logged_in_student", JSON.stringify(updated));
       
       // Also update the general students register list
-      const studentsJSON = localStorage.getItem("nappy_students");
-      if (studentsJSON) {
-        try {
-          const allStudents = JSON.parse(studentsJSON);
-          const index = allStudents.findIndex((s: any) => s.email === student.email);
-          if (index !== -1) {
-            allStudents[index] = { ...allStudents[index], ...editForm };
-            localStorage.setItem("nappy_students", JSON.stringify(allStudents));
-          }
-        } catch (e) {
-          console.error("Error updating primary students list", e);
-        }
+      const allStudents = nappyDb.getStudents();
+      const index = allStudents.findIndex((s: any) => s.email === student.email);
+      if (index !== -1) {
+        allStudents[index] = { ...allStudents[index], ...editForm };
+        nappyDb.saveStudents(allStudents);
       }
 
       setEditModalOpen(false);

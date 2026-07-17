@@ -112,38 +112,9 @@ export default function AdminDashboard() {
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Admin Profile State loaded from localStorage or defaults
+  // Admin Profile State loaded from nappyDb
   const [adminProfile, setAdminProfile] = useState(() => {
-    const credsStr = localStorage.getItem("nappy_admin_credentials");
-    const profileStr = localStorage.getItem("nappy_admin_profile");
-    let email = "admin@nappy.com";
-    let fullName = "NapPy Administrator";
-    let createdDate = "July 16, 2026";
-    let lastLogin = localStorage.getItem("nappy_admin_last_login") || "July 16, 2026, 08:09 AM";
-
-    if (credsStr) {
-      try {
-        const creds = JSON.parse(credsStr);
-        if (creds.email) email = creds.email;
-      } catch (e) {}
-    }
-
-    if (profileStr) {
-      try {
-        const profile = JSON.parse(profileStr);
-        if (profile.fullName) fullName = profile.fullName;
-        if (profile.createdDate) createdDate = profile.createdDate;
-        if (profile.lastLogin) lastLogin = profile.lastLogin;
-      } catch (e) {}
-    }
-
-    return {
-      fullName,
-      email,
-      createdDate,
-      lastLogin,
-      role: "Administrator"
-    };
+    return nappyDb.getAdminProfile();
   });
 
   // Admin Account Settings Form States
@@ -241,17 +212,10 @@ export default function AdminDashboard() {
     }
 
     // 1. Initialize Courses
-    const cachedCourses = localStorage.getItem("nappy_admin_courses");
-    if (cachedCourses) {
-      setCourses(JSON.parse(cachedCourses));
-    } else {
-      localStorage.setItem("nappy_admin_courses", JSON.stringify([]));
-      setCourses([]);
-    }
+    setCourses(nappyDb.getCourses());
 
     // 2. Initialize Students
-    const cachedStudents = localStorage.getItem("nappy_students");
-    const parsedStudents = cachedStudents ? JSON.parse(cachedStudents) : [];
+    const parsedStudents = nappyDb.getStudents();
     // Map with status and date fallbacks, sorted newest first (using registrationDate)
     const sanitized = parsedStudents.map((s: any) => ({
       ...s,
@@ -265,82 +229,44 @@ export default function AdminDashboard() {
     setStudents(sanitized);
 
     // 3. Initialize Notes
-    const cachedNotes = localStorage.getItem("nappy_admin_notes");
-    if (cachedNotes) {
-      setNotes(JSON.parse(cachedNotes));
-    } else {
-      localStorage.setItem("nappy_admin_notes", JSON.stringify([]));
-      setNotes([]);
-    }
+    setNotes(nappyDb.getNotes());
 
     // 4. Initialize Live Classes
-    const cachedLive = localStorage.getItem("nappy_admin_live_classes");
-    if (cachedLive) {
-      setLiveClasses(JSON.parse(cachedLive));
-    } else {
-      localStorage.setItem("nappy_admin_live_classes", JSON.stringify([]));
-      setLiveClasses([]);
-    }
+    setLiveClasses(nappyDb.getLiveClasses());
 
     // 5. Initialize Assignments
-    const cachedAssigns = nappyDb.getAssignments();
-    setAssignments(cachedAssigns);
+    setAssignments(nappyDb.getAssignments());
 
     // 6. Initialize Announcements
-    const cachedAnnouncements = localStorage.getItem("nappy_announcements");
-    if (cachedAnnouncements) {
-      setAnnouncements(JSON.parse(cachedAnnouncements));
-    } else {
-      localStorage.setItem("nappy_announcements", JSON.stringify([]));
-      setAnnouncements([]);
-    }
+    setAnnouncements(nappyDb.getAnnouncements());
 
     // 7. Initialize Recorded Lectures
-    const cachedLectures = localStorage.getItem("nappy_recorded_lectures");
-    if (cachedLectures) {
-      setRecordedLectures(JSON.parse(cachedLectures));
-    } else {
-      localStorage.setItem("nappy_recorded_lectures", JSON.stringify([]));
-      setRecordedLectures([]);
-    }
+    setRecordedLectures(nappyDb.getRecordedLectures());
 
     // 8. Initialize Student Queries
-    const cachedQueries = localStorage.getItem("nappy_student_queries");
-    if (cachedQueries) {
-      setQueries(JSON.parse(cachedQueries));
-    } else {
-      localStorage.setItem("nappy_student_queries", JSON.stringify([]));
-      setQueries([]);
-    }
+    setQueries(nappyDb.getStudentQueries());
 
     // 9. Initialize Assignment Submissions
-    const cachedSubs = localStorage.getItem("nappy_assignment_submissions");
-    if (cachedSubs) {
-      setSubmissions(JSON.parse(cachedSubs));
-    } else {
-      localStorage.setItem("nappy_assignment_submissions", JSON.stringify([]));
-      setSubmissions([]);
-    }
+    setSubmissions(nappyDb.getAssignmentSubmissions());
 
     const loadAllData = () => {
-      const q = localStorage.getItem("nappy_student_queries");
-      if (q) setQueries(JSON.parse(q));
-      const c = localStorage.getItem("nappy_admin_courses");
-      if (c) setCourses(JSON.parse(c));
-      const s = localStorage.getItem("nappy_students");
-      if (s) setStudents(JSON.parse(s));
-      const n = localStorage.getItem("nappy_admin_notes");
-      if (n) setNotes(JSON.parse(n));
-      const l = localStorage.getItem("nappy_admin_live_classes");
-      if (l) setLiveClasses(JSON.parse(l));
-      const a = localStorage.getItem("nappy_admin_assignments");
-      if (a) setAssignments(JSON.parse(a));
-      const ann = localStorage.getItem("nappy_announcements");
-      if (ann) setAnnouncements(JSON.parse(ann));
-      const lec = localStorage.getItem("nappy_recorded_lectures");
-      if (lec) setRecordedLectures(JSON.parse(lec));
-      const subs = localStorage.getItem("nappy_assignment_submissions");
-      if (subs) setSubmissions(JSON.parse(subs));
+      setQueries(nappyDb.getStudentQueries());
+      setCourses(nappyDb.getCourses());
+      
+      const studentsFromDb = nappyDb.getStudents();
+      const sortedStudents = [...studentsFromDb].sort((a, b) => {
+        const dateA = new Date(a.registrationDate || 0).getTime();
+        const dateB = new Date(b.registrationDate || 0).getTime();
+        return dateB - dateA;
+      });
+      setStudents(sortedStudents);
+      
+      setNotes(nappyDb.getNotes());
+      setLiveClasses(nappyDb.getLiveClasses());
+      setAssignments(nappyDb.getAssignments());
+      setAnnouncements(nappyDb.getAnnouncements());
+      setRecordedLectures(nappyDb.getRecordedLectures());
+      setSubmissions(nappyDb.getAssignmentSubmissions());
     };
 
     const handleNavigate = (e: Event) => {
@@ -372,8 +298,7 @@ export default function AdminDashboard() {
   const handleResolveQuery = (queryId: string) => {
     const updated = queries.map(q => q.id === queryId ? { ...q, status: "Resolved" as const } : q);
     setQueries(updated);
-    localStorage.setItem("nappy_student_queries", JSON.stringify(updated));
-    window.dispatchEvent(new Event("nappy_db_update"));
+    nappyDb.saveStudentQueries(updated);
   };
 
   const handleDeleteQuery = (queryId: string) => {
@@ -387,8 +312,7 @@ export default function AdminDashboard() {
       onConfirm: () => {
         const updated = queries.filter(q => q.id !== queryId);
         setQueries(updated);
-        localStorage.setItem("nappy_student_queries", JSON.stringify(updated));
-        window.dispatchEvent(new Event("nappy_db_update"));
+        nappyDb.saveStudentQueries(updated);
       }
     });
   };
@@ -455,8 +379,7 @@ export default function AdminDashboard() {
 
   const syncAndSetCourses = (updated: Course[]) => {
     setCourses(updated);
-    localStorage.setItem("nappy_admin_courses", JSON.stringify(updated));
-    window.dispatchEvent(new Event("nappy_db_update"));
+    nappyDb.saveCourses(updated);
   };
 
   const syncAndSetStudents = (updated: Student[]) => {
@@ -466,8 +389,7 @@ export default function AdminDashboard() {
       return dateB - dateA;
     });
     setStudents(sorted);
-    localStorage.setItem("nappy_students", JSON.stringify(sorted));
-    window.dispatchEvent(new Event("nappy_db_update"));
+    nappyDb.saveStudents(sorted);
   };
 
   const syncAndSetNotes = (updated: Note[]) => {
@@ -525,17 +447,10 @@ export default function AdminDashboard() {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
-    // Load admin credentials
-    const credsStr = localStorage.getItem("nappy_admin_credentials");
-    let adminPassword = "admin123";
-    let adminEmail = "admin@nappy.com";
-    if (credsStr) {
-      try {
-        const creds = JSON.parse(credsStr);
-        if (creds.password) adminPassword = creds.password;
-        if (creds.email) adminEmail = creds.email;
-      } catch (err) {}
-    }
+    // Load admin credentials from nappyDb
+    const adminCreds = nappyDb.getAdminCredentials();
+    const adminPassword = adminCreds.password;
+    const adminEmail = adminCreds.email;
 
     // 1. Verify Current Password
     if (!emailCurrentPassword) {
@@ -583,14 +498,14 @@ export default function AdminDashboard() {
       email: cleanNewEmail,
       password: adminPassword,
     };
-    localStorage.setItem("nappy_admin_credentials", JSON.stringify(updatedCreds));
+    nappyDb.saveAdminCredentials(updatedCreds);
 
     // Update profile
     const updatedProfile = {
       ...adminProfile,
       email: cleanNewEmail,
     };
-    localStorage.setItem("nappy_admin_profile", JSON.stringify(updatedProfile));
+    nappyDb.saveAdminProfile(updatedProfile);
 
     setAdminProfile(updatedProfile);
 
@@ -615,17 +530,10 @@ export default function AdminDashboard() {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
-    // Load admin credentials
-    const credsStr = localStorage.getItem("nappy_admin_credentials");
-    let adminPassword = "admin123";
-    let adminEmail = "admin@nappy.com";
-    if (credsStr) {
-      try {
-        const creds = JSON.parse(credsStr);
-        if (creds.password) adminPassword = creds.password;
-        if (creds.email) adminEmail = creds.email;
-      } catch (err) {}
-    }
+    // Load admin credentials from nappyDb
+    const adminCreds = nappyDb.getAdminCredentials();
+    const adminPassword = adminCreds.password;
+    const adminEmail = adminCreds.email;
 
     // 1. Verify Current Password
     if (!pwdCurrentPassword) {
@@ -674,7 +582,7 @@ export default function AdminDashboard() {
       email: adminEmail,
       password: newPassword,
     };
-    localStorage.setItem("nappy_admin_credentials", JSON.stringify(updatedCreds));
+    nappyDb.saveAdminCredentials(updatedCreds);
 
     // Reset fields
     setPwdCurrentPassword("");
@@ -2159,22 +2067,41 @@ export default function AdminDashboard() {
                 <div className="flex flex-col gap-3 mt-6">
                   <button
                     onClick={() => {
+                      nappyDb.saveStudents([]);
+                      nappyDb.saveCourses([]);
+                      nappyDb.saveNotes([]);
+                      nappyDb.saveLiveClasses([]);
+                      nappyDb.saveAssignments([]);
+                      nappyDb.saveAnnouncements([]);
+                      nappyDb.saveRecordedLectures([]);
+                      nappyDb.saveAssignmentSubmissions([]);
+                      nappyDb.saveStudentQueries([]);
                       localStorage.clear();
                       sessionStorage.setItem("nappy_pending_toast", JSON.stringify({
                         type: "success",
                         title: "Hard Reset Complete",
-                        message: "Mock localStorage cleared! Please sign-in again to re-initialize datasets."
+                        message: "Cloud database and localStorage cleared! Please sign-in again to re-initialize datasets."
                       }));
                       window.location.reload();
                     }}
                     className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 text-xs font-bold transition-all cursor-pointer"
                   >
-                    Hard Reset Mock Database State
+                    Hard Reset Database State
                   </button>
 
                   <button
                     id="factory-reset-app-btn"
                     onClick={() => {
+                      nappyDb.saveStudents([]);
+                      nappyDb.saveCourses([]);
+                      nappyDb.saveNotes([]);
+                      nappyDb.saveLiveClasses([]);
+                      nappyDb.saveAssignments([]);
+                      nappyDb.saveAnnouncements([]);
+                      nappyDb.saveRecordedLectures([]);
+                      nappyDb.saveAssignmentSubmissions([]);
+                      nappyDb.saveStudentQueries([]);
+
                       // Get all localStorage keys starting with nappy_
                       const keysToRemove: string[] = [];
                       for (let i = 0; i < localStorage.length; i++) {
@@ -2186,28 +2113,7 @@ export default function AdminDashboard() {
 
                       // Remove student session or reset datasets to empty arrays
                       keysToRemove.forEach((key) => {
-                        if (key === "nappy_logged_in_student") {
-                          localStorage.removeItem(key);
-                        } else {
-                          localStorage.setItem(key, JSON.stringify([]));
-                        }
-                      });
-
-                      // Explicitly ensure all dataset keys are set to empty arrays
-                      const mainKeys = [
-                        "nappy_students",
-                        "nappy_admin_courses",
-                        "nappy_admin_notes",
-                        "nappy_admin_live_classes",
-                        "nappy_admin_assignments",
-                        "nappy_announcements",
-                        "nappy_recorded_lectures",
-                        "nappy_completed_videos",
-                        "nappy_submitted_assigns",
-                        "nappy_downloaded_notes"
-                      ];
-                      mainKeys.forEach((key) => {
-                        localStorage.setItem(key, JSON.stringify([]));
+                        localStorage.removeItem(key);
                       });
 
                       sessionStorage.setItem("nappy_pending_toast", JSON.stringify({

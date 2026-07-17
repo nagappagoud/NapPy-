@@ -11,6 +11,7 @@ import Login from "./components/Login";
 import StudentDashboard from "./components/StudentDashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import FloatingAssistant from "./components/FloatingAssistant";
+import SupabaseSyncIndicator from "./components/SupabaseSyncIndicator";
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -52,6 +53,7 @@ export default function App() {
         <main className="relative z-10">
           <Register />
         </main>
+        <SupabaseSyncIndicator />
       </div>
     );
   }
@@ -64,6 +66,7 @@ export default function App() {
         <main className="relative z-10">
           <Login />
         </main>
+        <SupabaseSyncIndicator />
       </div>
     );
   }
@@ -77,6 +80,7 @@ export default function App() {
           <StudentDashboard />
         </main>
         <FloatingAssistant userType="student" />
+        <SupabaseSyncIndicator />
       </div>
     );
   }
@@ -89,6 +93,7 @@ export default function App() {
           <AdminDashboard />
         </main>
         <FloatingAssistant userType="admin" />
+        <SupabaseSyncIndicator />
       </div>
     );
   }
@@ -121,6 +126,7 @@ export default function App() {
 
       {/* 7. Footer Section */}
       <Footer />
+      <SupabaseSyncIndicator />
     </div>
   );
 }
