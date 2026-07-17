@@ -1,0 +1,6 @@
+{
+  "name": "NapPy",
+  "description": "A premium learning platform for software engineering students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
